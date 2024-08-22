@@ -5,6 +5,8 @@ import os
 import uvicorn
 from dotenv import load_dotenv
 
+from routes import health
+
 
 load_dotenv()
 
@@ -114,10 +116,16 @@ async def delete_image(repository: str, tag: str):
         raise HTTPException(status_code=500, detail="Failed to retrieve image digest")
 
 
+app.include_router(
+    health.health_router, prefix="/health", tags=["health"], include_in_schema=True
+)
+
+
 @app.get("/")
 async def list_images(request: Request):
     data = []
     total_size_gb = 0.0
+    unique_repos = set()
     repositories = get_catalog()
 
     for repository in repositories:
@@ -125,9 +133,22 @@ async def list_images(request: Request):
         for tag in tags:
             size = get_manifest_size(repository, tag)
             total_size_gb += size
+
+            split_repo = repository.split("/")
+            if len(split_repo) == 2:
+                repo, name = split_repo
+            elif len(split_repo) == 1:
+                repo = "-"
+                name = split_repo[0]
+            else:
+                repo = "/".join(split_repo[:-1])
+                name = split_repo[-1]
+
+            unique_repos.add(repo)
             data.append(
                 {
-                    "repository": repository,
+                    "repo": repo,
+                    "name": name,
                     "tag": tag,
                     "size": f"{size:.2f} GB",
                     "size_numeric": size,
@@ -136,7 +157,12 @@ async def list_images(request: Request):
 
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "data": data, "total_size_gb": f"{total_size_gb:.2f} GB"},
+        {
+            "request": request,
+            "data": data,
+            "total_size_gb": f"{total_size_gb:.2f} GB",
+            "unique_repos": sorted(unique_repos),
+        },
     )
 
 
