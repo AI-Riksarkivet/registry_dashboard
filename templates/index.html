@@ -27,7 +27,7 @@
                 <tr>
                     <td>{{ item.repository }}</td>
                     <td>{{ item.tag }}</td>
-                    <td>{{ item.size }}</td>
+                    <td data-order="{{ item.size_numeric }}">{{ item.size }}</td>
                     <td>
                         <button class="btn btn-secondary btn-sm" onclick="openEditModal('{{ item.repository }}', '{{ item.tag }}')">Edit</button>
                         <button class="btn btn-danger btn-sm" onclick="openDeleteModal('{{ item.repository }}', '{{ item.tag }}')">Delete</button>
@@ -103,7 +103,11 @@
                 "ordering": true,
                 "info": true,
                 "lengthChange": true,
-                "pageLength": 10
+                "pageLength": 10,
+                "order": [[2, 'desc']], 
+                "columnDefs": [
+                    { "type": "num", "targets": 2 } 
+                ]
             });
         });
 

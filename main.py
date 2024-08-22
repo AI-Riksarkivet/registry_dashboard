@@ -89,7 +89,6 @@ def get_manifest_digest(repository, tag):
 @app.delete("/delete/{repository}/{tag}")
 async def delete_image(repository: str, tag: str):
     try:
-        # First, get the digest of the manifest you want to delete
         response = requests.head(
             f"{REGISTRY_URL}/v2/{repository}/manifests/{tag}",
             headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json"},
@@ -97,7 +96,6 @@ async def delete_image(repository: str, tag: str):
         response.raise_for_status()
         digest = response.headers["Docker-Content-Digest"]
 
-        # Now, delete the manifest by digest
         delete_response = requests.delete(
             f"{REGISTRY_URL}/v2/{repository}/manifests/{digest}",
             headers=DEFAULT_HEADERS,
@@ -128,7 +126,12 @@ async def list_images(request: Request):
             size = get_manifest_size(repository, tag)
             total_size_gb += size
             data.append(
-                {"repository": repository, "tag": tag, "size": f"{size:.2f} GB"}
+                {
+                    "repository": repository,
+                    "tag": tag,
+                    "size": f"{size:.2f} GB",
+                    "size_numeric": size,
+                }
             )
 
     return templates.TemplateResponse(
