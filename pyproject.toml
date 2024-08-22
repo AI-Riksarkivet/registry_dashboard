@@ -1,0 +1,17 @@
+[project]
+name = "registry-dashboard"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[standard]>=0.112.1",
+    "uvicorn>=0.30.6",
+    "jinja2>=3.1.4",
+    "requests>=2.32.3",
+    "python-dotenv>=1.0.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
