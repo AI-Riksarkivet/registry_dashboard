@@ -14,7 +14,6 @@ COPY . .
 
 COPY .env .env
 
-
 RUN uv pip install -e .
 
-ENTRYPOINT ["uv", "run", "fastapi", "run", "main.py"]
+ENTRYPOINT ["uv", "run", "fastapi", "run", "app.main:app"]

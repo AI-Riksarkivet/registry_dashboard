@@ -1,0 +1,4 @@
+1. Fix so copy dont show http --> http://registry.ra.se:5002/airiksarkivet/htrflow:v0.1.0 -->  registry.ra.se:5002/airiksarkivet/htrflow:v0.1.0
+2. Fix so delete button works. --> The delete button should also make sure so that the table and total size is updated.
+3. Ensure so that total size actually show the real size. The layers are counted multiple times, since if i image the layer are still existing another
+--> Perhaps take the set of all layers hash and afterwards count all the layers size.
