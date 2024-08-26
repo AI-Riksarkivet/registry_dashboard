@@ -12,14 +12,14 @@ DEFAULT_HEADERS = {
 
 
 def get_catalog(REGISTRY_URL):
-    logger.info("Fetching catalog from registry")
+    # logger.info("Fetching catalog from registry")
     response = requests.get(f"{REGISTRY_URL}/v2/_catalog", headers=DEFAULT_HEADERS)
     response.raise_for_status()
     return response.json().get("repositories", [])
 
 
 def get_tags(REGISTRY_URL, repository):
-    logger.info(f"Fetching tags for repository: {repository}")
+    # logger.info(f"Fetching tags for repository: {repository}")
     try:
         response = requests.get(
             f"{REGISTRY_URL}/v2/{repository}/tags/list", headers=DEFAULT_HEADERS
@@ -36,7 +36,7 @@ def get_tags(REGISTRY_URL, repository):
 
 
 def get_manifest_size(REGISTRY_URL, repository, tag, seen_layers):
-    logger.info(f"Fetching manifest size for {repository}:{tag}")
+    # logger.info(f"Fetching manifest size for {repository}:{tag}")
     try:
         headers = {
             "User-Agent": "curl/8.7.1",
@@ -61,7 +61,7 @@ def get_manifest_size(REGISTRY_URL, repository, tag, seen_layers):
                 total_size_bytes += layer.get("size", 0)
 
         total_size_gb = total_size_bytes / (1024**3)
-        logger.info(f"Total size for {repository}:{tag} is {total_size_gb:.2f} GB")
+        # logger.info(f"Total size for {repository}:{tag} is {total_size_gb:.2f} GB")
         return total_size_gb
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:

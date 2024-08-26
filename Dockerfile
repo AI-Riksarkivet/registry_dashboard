@@ -6,14 +6,10 @@ WORKDIR /app
 
 ENV UV_SYSTEM_PYTHON=1
 
-COPY pyproject.toml .
+COPY . .
+
+# COPY .env .env
 
 RUN uv pip install -r pyproject.toml
 
-COPY . .
-
-COPY .env .env
-
-RUN uv pip install -e .
-
-ENTRYPOINT ["uv", "run", "fastapi", "run", "app.main:app"]
+ENTRYPOINT ["uv", "run", "fastapi", "run"]

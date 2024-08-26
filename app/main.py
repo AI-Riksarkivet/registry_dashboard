@@ -7,18 +7,19 @@ import logging
 from urllib.parse import urlparse
 import uvicorn
 from dotenv import load_dotenv
-
+import sys
 from app.routes.health import health_router
 from app.routes.delete import delete_router
 from app.utils import get_catalog, get_tags, get_manifest_size
 
-log_filename = "registry_dashboard.log"
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler(log_filename)],
-)
-logger = logging.getLogger(__name__)
+log_file = "app.log"
+logger = logging.getLogger("app")
+logger.setLevel(logging.INFO)
+file_handler = logging.FileHandler(log_file)
+log_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+file_handler.setFormatter(log_formatter)
+logger.addHandler(file_handler)
+
 
 load_dotenv(override=True)
 
@@ -39,7 +40,6 @@ templates = Jinja2Templates(directory="app/templates")
 async def list_images(request: Request):
     data = []
     total_size_gb = 0.0
-    unique_repos = set()
     seen_layers = set()
     repositories = get_catalog(REGISTRY_URL)
 
@@ -51,19 +51,10 @@ async def list_images(request: Request):
             size = get_manifest_size(REGISTRY_URL, repository, tag, seen_layers)
             total_size_gb += size
 
-            split_repo = repository.split("/")
+            name = repository
 
-            if len(split_repo) == 1:
-                repo = ""
-                name = split_repo[0]
-            else:
-                repo = "/".join(split_repo[:-1])
-                name = split_repo[-1]
-
-            unique_repos.add(repo)
             data.append(
                 {
-                    "repo": repo,
                     "name": name,
                     "tag": tag,
                     "size": f"{size:.2f} GB",
@@ -78,7 +69,6 @@ async def list_images(request: Request):
             "request": request,
             "data": data,
             "total_size_gb": f"{total_size_gb:.2f} GB",
-            "unique_repos": sorted(unique_repos),
             "REGISTRY_NAME": REGISTRY_NAME,
         },
     )
@@ -88,6 +78,8 @@ app.include_router(
     health_router, prefix="/health", tags=["health"], include_in_schema=True
 )
 app.include_router(delete_router)
+
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
@@ -101,4 +93,4 @@ if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", 8000))
     logger.info(f"Starting server on {host}:{port}")
-    uvicorn.run("app.main:app", host=host, port=port, reload=False, access_log=False)
+    uvicorn.run("app.main:app", host=host, port=port)

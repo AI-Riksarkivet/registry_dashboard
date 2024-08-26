@@ -2,8 +2,9 @@ from fastapi import APIRouter, HTTPException
 import requests
 import os
 import logging
+from dotenv import load_dotenv
+from urllib.parse import unquote
 
-logger = logging.getLogger(__name__)
 
 REGISTRY_URL = os.getenv("REGISTRY_URL")
 DEFAULT_HEADERS = {
@@ -16,6 +17,9 @@ DEFAULT_HEADERS = {
 delete_router = APIRouter()
 
 
+logger = logging.getLogger("app")
+
+
 def get_manifest_digest(repository, tag):
     headers = {
         "User-Agent": "curl/8.7.1",
@@ -24,26 +28,30 @@ def get_manifest_digest(repository, tag):
         "Accept-Encoding": "identity",
     }
 
-    logger.info(f"Fetching digest for {repository}:{tag}")
     response = requests.get(
         f"{REGISTRY_URL}/v2/{repository}/manifests/{tag}", headers=headers
     )
 
-    logger.info(f"GET {response.url} - Status Code: {response.status_code}")
-
     if response.status_code == 404:
-        logger.error(f"Repository {repository} with tag {tag} not found.")
+        logger.error(
+            f"Repository {repository} with tag {tag} not found. Response: {response.text}"
+        )
         return None
 
     response.raise_for_status()
+
     digest = response.headers.get("Docker-Content-Digest")
-    logger.info(f"Digest for {repository}:{tag} is {digest}")
+    if not digest:
+        logger.error(f"Failed to retrieve Docker-Content-Digest for {repository}:{tag}")
+        return None
+
     return digest
 
 
-@delete_router.delete("/delete/{repo_name}/{tag}")
+@delete_router.delete("/delete/{repo_name:path}/{tag}")
 async def delete_image(repo_name: str, tag: str):
     try:
+        repo_name = unquote(repo_name)
         logger.info(f"Received request to delete image: {repo_name}:{tag}")
 
         digest = get_manifest_digest(repo_name, tag)
@@ -55,15 +63,12 @@ async def delete_image(repo_name: str, tag: str):
                 detail=f"Repository {repo_name} with tag {tag} not found",
             )
 
-        logger.info(f"Deleting {repo_name}:{tag} with digest {digest}")
-        delete_response = requests.delete(
-            f"{REGISTRY_URL}/v2/{repo_name}/manifests/{digest}",
-            headers=DEFAULT_HEADERS,
+        delete_url = f"{REGISTRY_URL}/v2/{repo_name}/manifests/{digest}"
+        logger.info(
+            f"Deleting {repo_name}:{tag} with digest {digest} using URL: {delete_url}"
         )
 
-        logger.info(
-            f"DELETE {delete_response.url} - Status Code: {delete_response.status_code}"
-        )
+        delete_response = requests.delete(delete_url, headers=DEFAULT_HEADERS)
 
         if delete_response.status_code == 202:
             logger.info(f"Image {repo_name}:{tag} deleted successfully")

@@ -10,26 +10,10 @@
     <link href="https://cdn.datatables.net/1.13.1/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
         /* Custom column widths with max-width enforcement */
-        th.repo-col, td.repo-col { width: 30%; max-width: 300px; }
-        th.name-col, td.name-col { width: 30%; max-width: 300px; }
-        th.tag-col, td.tag-col { width: 10%; max-width: 50px; }
-        th.size-col, td.size-col { width: 10%; max-width: 50px; }
+        th.name-col, td.name-col { width: 40%; max-width: 400px; }
+        th.tag-col, td.tag-col { width: 20%; max-width: 100px; }
+        th.size-col, td.size-col { width: 20%; max-width: 100px; }
         th.actions-col, td.actions-col { width: 20%; min-width: 200px; white-space: nowrap; }
-
-        /* Flex container for total size and filter */
-        .info-filter-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        /* Adjust the width of the filter dropdown */
-        .repo-filter-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;  /* Space between the label and the dropdown */
-        }
 
         /* Adjust toast container placement to top-right corner */
         .toast-container {
@@ -44,25 +28,14 @@
     <div class="container mt-5">
         <h1 class="mb-4">Riksarkivet Registry Images</h1>
 
-        <!-- Flex container for Total Size and Repository filter -->
+        <!-- Display Total Size -->
         <div class="info-filter-container">
             <h4>Total Size: {{ total_size_gb }}</h4>
-            <div class="repo-filter-container">
-                <label for="repoFilter" class="form-label mb-0">Repository:</label>
-                <select id="repoFilter" class="form-select w-auto">
-                    <option value="">All</option>
-                    <option value="[No Repository]">No Repository</option>
-                    {% for repo in unique_repos %}
-                    <option value="{{ repo }}">{{ repo }}</option>
-                    {% endfor %}
-                </select>
-            </div>
         </div>
 
         <table id="imagesTable" class="table table-striped table-bordered">
             <thead>
                 <tr>
-                    <th class="repo-col">Repository</th>
                     <th class="name-col">Name</th>
                     <th class="tag-col">Tag</th>
                     <th class="size-col">Size (GB)</th>
@@ -72,14 +45,13 @@
             <tbody>
                 {% for item in data %}
                 <tr>
-                    <td>{{ item.repo or '[No Repository]' }}</td>
                     <td>{{ item.name }}</td>
                     <td>{{ item.tag }}</td>
                     <td>{{ item.size }}</td>
                     <td class="actions-col">
-                        <button class="btn btn-info btn-sm" onclick="copyToClipboard('{{ item.repo }}', '{{ item.name }}', '{{ item.tag }}')">Copy</button>
-                        <button class="btn btn-secondary btn-sm" onclick="openEditModal('{{ item.repo }}', '{{ item.name }}', '{{ item.tag }}')">Edit</button>
-                        <button class="btn btn-danger btn-sm" onclick="openDeleteModal('{{ item.repo }}', '{{ item.name }}', '{{ item.tag }}')">Delete</button>
+                        <button class="btn btn-info btn-sm" onclick="copyToClipboard('{{ item.name }}', '{{ item.tag }}')">Copy</button>
+                        <button class="btn btn-secondary btn-sm" onclick="openEditModal('{{ item.name }}', '{{ item.tag }}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="openDeleteModal('{{ item.name }}', '{{ item.tag }}')">Delete</button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -96,7 +68,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Edit functionality for <strong id="editRepository"></strong>:<strong id="editTag"></strong> is not implemented yet.
+                    Edit functionality for <strong id="editName"></strong>:<strong id="editTag"></strong> is not implemented yet.
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -114,7 +86,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to delete <strong id="deleteRepository"></strong>:<strong id="deleteTag"></strong>?
+                    Are you sure you want to delete <strong id="deleteName"></strong>:<strong id="deleteTag"></strong>?
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -156,41 +128,29 @@
                 "info": true,
                 "lengthChange": true,
                 "pageLength": 10,
-                "order": [[3, 'desc']], 
+                "order": [[2, 'desc']], 
                 "columnDefs": [
-                    { "type": "num", "targets": 3 } 
+                    { "type": "num", "targets": 2 } 
                 ]
-            });
-    
-            // Apply the repository filter
-            $('#repoFilter').on('change', function () {
-                let filterValue = this.value;
-                if (filterValue === '[No Repository]') {
-                    table.column(0).search('^$', true, false).draw();  // Regex for empty string
-                } else {
-                    table.column(0).search(filterValue).draw();
-                }
             });
         });
     
-        function openEditModal(repo, name, tag) {
-            const repo_and_name = repo ? `${repo}/${name}` : name;
-            $('#editRepository').text(repo_and_name);
+        function openEditModal(name, tag) {
+            $('#editName').text(name);
             $('#editTag').text(tag);
             $('#editModal').modal('show');
         }
     
-        function openDeleteModal(repo, name, tag) {
-            const repo_and_name = repo ? `${repo}/${name}` : name;
-            $('#deleteRepository').text(repo_and_name);
+        function openDeleteModal(name, tag) {
+            $('#deleteName').text(name);
             $('#deleteTag').text(tag);
-            $('#confirmDelete').attr('onclick', `deleteImage('${repo_and_name}', '${tag}')`);
+            $('#confirmDelete').attr('onclick', `deleteImage('${name}', '${tag}')`);
             $('#deleteModal').modal('show');
         }
     
-        function deleteImage(repo_and_name, tag) {
+        function deleteImage(name, tag) {
             $.ajax({
-                url: `/delete/${repo_and_name}/${tag}`,
+                url: `/delete/${name}/${tag}`,
                 type: 'DELETE',
                 success: function(result) {
                     $('#deleteModal').modal('hide');
@@ -203,10 +163,9 @@
             });
         }
     
-        function copyToClipboard(repo, name, tag) {
-            const repo_and_name = repo ? `${repo}/${name}` : name;
+        function copyToClipboard(name, tag) {
             var registryName = "{{ REGISTRY_NAME }}";
-            var fullPath = `${registryName}/${repo_and_name}:${tag}`;
+            var fullPath = `${registryName}/${name}:${tag}`;
             navigator.clipboard.writeText(fullPath).then(function() {
                 showToast('Copied to clipboard: ' + fullPath);
             }, function(err) {
